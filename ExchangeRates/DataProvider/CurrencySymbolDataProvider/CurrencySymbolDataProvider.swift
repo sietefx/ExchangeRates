@@ -7,11 +7,11 @@
 
 import Foundation
 
-protocol CurrencySymbolDataProviderDeletegate: DataProviderManagerDelegate {
-    func success(model: CurrencySymbolObject)
+protocol CurrencySymbolDataProviderDelegate: DataProviderManagerDelegate {
+    func success(model: [CurrencySymbolModel])
 }
 
-class CurrencySymbolDataProvider: DataProviderManager<CurrencySymbolDataProviderDeletegate, CurrencySymbolObject> {
+class CurrencySymbolDataProvider: DataProviderManager<CurrencySymbolDataProviderDelegate, [CurrencySymbolModel]> {
     
     private let currencyStore: CurrencyStore
     
@@ -19,11 +19,13 @@ class CurrencySymbolDataProvider: DataProviderManager<CurrencySymbolDataProvider
         self.currencyStore = currencyStore
     }
     
-    func fetchSymbols(by base: String, from symbols: [String], starDate: String, endDate: String) {
+    func fetchSymbols(by base: String, from symbols: [String], startDate: String, endDate: String) {
         Task.init {
             do {
-                let model = try await currencyStore.fetchSymbols()
-                delegate?.success(model: model)
+                let object = try await currencyStore.fetchSymbols()
+                delegate?.success(model: object.map({ (symbol, fullName) -> CurrencySymbolModel in
+                    return CurrencySymbolModel(symbol: symbol, fullName: fullName)
+                }))
             } catch {
                 delegate?.errorData(delegate, error: error)
             }

@@ -7,11 +7,11 @@
 
 import Foundation
 
-protocol RateFluctuationDataProviderDeletegate: DataProviderManagerDelegate {
-    func success(model: RatesFluctuationObject)
+protocol RateFluctuationDataProviderDelegate: DataProviderManagerDelegate {
+    func success(model: [RateFluctuationModel])
 }
 
-class RatesFluctuationDataProvider: DataProviderManager<RateFluctuationDataProviderDeletegate, RatesFluctuationObject> {
+class RatesFluctuationDataProvider: DataProviderManager<RateFluctuationDataProviderDelegate, [RateFluctuationModel]> {
     
     private let ratesStore: RatesStore
     
@@ -19,11 +19,14 @@ class RatesFluctuationDataProvider: DataProviderManager<RateFluctuationDataProvi
         self.ratesStore = ratesStore
     }
     
-    func fetchFluctuation(by base: String, from symbols: [String], starDate: String, endDate: String) {
-        Task.init {
+    func fetchFluctuation(by base: String, from symbols: [String], startDate: String, endDate: String) {
+        Task {
             do {
-                let model = try await ratesStore.fetchFluctuation(by: base, form: symbols, startDate: starDate, endDate: endDate)
-                delegate?.success(model: model)
+                let object = try await ratesStore.fetchFluctuation(by: base, from: symbols, startDate: startDate, endDate: endDate)
+                await MainActor.run {
+                    delegate?.success(model: object.map({ (symbol, fluctuation) -> RateFluctuationModel in
+                        return RateFluctuationModel(symbol: symbol, change: fluctuation.change, changePct: fluctuation.changePct, endRate: fluctuation.endRate)
+                    }))}
             } catch {
                 delegate?.errorData(delegate, error: error)
             }

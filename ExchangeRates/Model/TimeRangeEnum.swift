@@ -15,13 +15,20 @@ enum TimeRangeEnum {
     case thisYear
     
     var date: Date {
-        switch self {
+            let calendar = Calendar.current
+            let now = Date()
             
-        case .today: return Date(from: .day, value: 1)
-        case .thisWeek: return Date(from: .day, value: 6)
-        case .thisMonth: return Date(from: .month, value: 1)
-        case .thisSemester: return Date(from: .month, value: 6)
-        case .thisYear: return Date(from: .year, value: 1)
+            switch self {
+            case .today:
+                return now // Hoje é a data atual
+            case .thisWeek:
+                return calendar.date(byAdding: .day, value: -6, to: now) ?? now // 6 dias atrás
+            case .thisMonth:
+                return calendar.date(byAdding: .month, value: -1, to: now) ?? now // 1 mês atrás
+            case .thisSemester:
+                return calendar.date(byAdding: .month, value: -6, to: now) ?? now // 6 meses atrás
+            case .thisYear:
+                return calendar.date(byAdding: .year, value: -1, to: now) ?? now // 1 ano atrás
         }
     }
 }

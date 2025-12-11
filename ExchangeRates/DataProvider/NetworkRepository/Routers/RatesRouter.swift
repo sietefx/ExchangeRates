@@ -9,8 +9,8 @@ import Foundation
 
 enum RatesRounter {
     
-    case fluctuation(base: String, symbols: [String], starDate: String, endDate: String)
-    case timeseries(base: String, symbols: [String], starDate: String, endDate: String)
+    case fluctuation(base: String, symbols: [String], startDate: String, endDate: String)
+    case timeseries(base: String, symbols: [String], startDate: String, endDate: String)
     
     var path: String {
         switch self {
@@ -25,23 +25,26 @@ enum RatesRounter {
         guard var url = URL(string: RatesApi.baseUrl + path) else { return nil }
         
         switch self {
-        case .fluctuation(let base, let symbols, let starDate, let endDate):
-            url.append(queryItems: [
+        case .fluctuation(let base, let symbols, let startDate, let endDate),
+             .timeseries(let base, let symbols, let startDate, let endDate):
+
+            // Query items obrigatórios
+            var items: [URLQueryItem] = [
                 URLQueryItem(name: "base", value: base),
-                URLQueryItem(name: "symbols", value: symbols.joined(separator: ",")),
-                URLQueryItem(name: "start_date", value: starDate),
+                URLQueryItem(name: "start_date", value: startDate),
                 URLQueryItem(name: "end_date", value: endDate)
-            ])
-        case .timeseries(let base, let symbols, let starDate, let endDate):
-            url.append(queryItems: [
-                URLQueryItem(name: "base", value: base),
-                URLQueryItem(name: "symbols", value: symbols.joined(separator: ",")),
-                URLQueryItem(name: "start_date", value: starDate),
-                URLQueryItem(name: "end_date", value: endDate)
-            ])
+            ]
+
+            // Somente adiciona "symbols" se houver conteúdo
+            if !symbols.isEmpty {
+                let joinedSymbols = symbols.joined(separator: ",")
+                items.append(URLQueryItem(name: "symbols", value: joinedSymbols))
+            }
+
+            url.append(queryItems: items)
         }
         
-        var request = URLRequest(url: url.appendingPathComponent(path), timeoutInterval: Double.infinity)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = HttpMethod.get.rawValue
         request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apikey")
         return request

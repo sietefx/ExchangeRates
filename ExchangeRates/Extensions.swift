@@ -56,6 +56,7 @@ extension String {
     func toDate(dateFormat: String = "yyyy-MM-dd") -> Date {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = dateFormat
+        dateFormatter.locale = Locale(identifier: "pt_BR_POSIX")
         return dateFormatter.date(from: self) ?? Date()
     }
 }
@@ -67,10 +68,14 @@ extension Date {
     }
     
     func formatter(to dateFormat: String) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "pt_BR_POSIX")
-        dateFormatter.dateFormat = dateFormat
-        return dateFormatter.string(from: self)
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "pt_BR_POSIX")
+            dateFormatter.dateFormat = dateFormat
+            return dateFormatter.string(from: self)
+        }
+        
+    func toString(dateFormat: String = "yyyy-MM-dd") -> String {
+        return formatter(to: dateFormat)
     }
 }
 
@@ -80,3 +85,4 @@ extension UINavigationController {
         navigationBar.topItem?.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
     }
 }
+

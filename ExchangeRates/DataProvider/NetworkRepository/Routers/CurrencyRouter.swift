@@ -23,7 +23,7 @@ enum CurrencyRouter {
         
         switch self {
             case .symbol:
-            var request = URLRequest(url: url.appendingPathComponent(path), timeoutInterval: Double.infinity)
+            var request = URLRequest(url: url, timeoutInterval: Double.infinity)
             request.httpMethod = HttpMethod.get.rawValue
             request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apikey")
             return request

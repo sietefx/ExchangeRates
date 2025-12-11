@@ -8,39 +8,18 @@
 import SwiftUI
 import Combine
 
-struct Fluctuation: Identifiable {
-    var id: UUID = UUID()
-    var symbol: String
-    var change: Double
-    var changePct: Double
-    var endRate: Double
-}
-
-extension Fluctuation {
-    
-    static let samples = [
-        Fluctuation(symbol: "USD", change: 0.0008, changePct: 0.41765, endRate: 0.18890),
-        Fluctuation(symbol: "EUR", change: 0.0003, changePct: 0.15644, endRate: 0.13545),
-        Fluctuation(symbol: "GBP", change: -0.0083, changePct: -0.00943, endRate: 0.12345)
-    ]
-}
-
-class FluctuationViewModel: ObservableObject {
-    @Published var fluctuations: [Fluctuation] = Fluctuation.samples
-}
-
 struct RatesFluctuationView: View {
     
-    @StateObject var viewModel = FluctuationViewModel()
+    @StateObject var viewModel = ViewModel()
     @State private var searchText = ""
     @State private var isPresentendBaseCurrencyFilter = false
     @State private var isPresentendMultiCurrencyFilter = false
     
-    var searchResult: [Fluctuation] {
+    var searchResult: [RateFluctuationModel] {
         if searchText.isEmpty {
-            return viewModel.fluctuations
+            return viewModel.ratesFluctuations
         } else {
-            return viewModel.fluctuations.filter {
+            return viewModel.ratesFluctuations.filter {
                 $0.symbol.contains(searchText.uppercased()) ||
                 $0.change.formatter(decimalPlaces: 4).contains(searchText.uppercased()) ||
                 $0.changePct.toPercentage().contains(searchText.uppercased()) ||
@@ -69,6 +48,9 @@ struct RatesFluctuationView: View {
                     MultiCurrenciesFilterView()
                 }
             }
+        }
+        .onAppear {
+            viewModel.doFetchRatesFluctuations(timeRange: .today)
         }
     }
     

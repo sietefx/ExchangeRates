@@ -8,14 +8,14 @@
 import Foundation
 
 protocol RateStoreProtocol {
-    func fetchFluctuation(by base: String, form symbols: [String], startDate: String, endDate: String) async throws -> RatesFluctuationObject
-    func fetchTimeseries(by base: String, form symbols: [String], startDate: String, endDate: String) async throws -> RatesHistoricalObject
+    func fetchFluctuation(by base: String, from symbols: [String], startDate: String, endDate: String) async throws -> RatesFluctuationObject
+    func fetchTimeseries(by base: String, from symbols: [String], startDate: String, endDate: String) async throws -> RatesHistoricalObject
 }
 
 class  RatesStore: BaseStore, RateStoreProtocol {
     
-    func fetchFluctuation(by base: String, form symbols: [String], startDate: String, endDate: String) async throws -> RatesFluctuationObject {
-        guard let urlRequest = try RatesRounter.fluctuation(base: base, symbols: symbols, starDate: startDate, endDate: endDate).asUrlRequest() else {
+    func fetchFluctuation(by base: String, from symbols: [String], startDate: String, endDate: String) async throws -> RatesFluctuationObject {
+        guard let urlRequest = try RatesRounter.fluctuation(base: base, symbols: symbols, startDate: startDate, endDate: endDate).asUrlRequest() else {
             throw error
         }
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
@@ -24,8 +24,8 @@ class  RatesStore: BaseStore, RateStoreProtocol {
         }
         return rates
     }
-    func fetchTimeseries(by base: String, form symbols: [String], startDate: String, endDate: String) async throws -> RatesHistoricalObject {
-        guard let urlRequest = try RatesRounter.timeseries(base: base, symbols: symbols, starDate: startDate, endDate: endDate).asUrlRequest() else {
+    func fetchTimeseries(by base: String, from symbols: [String], startDate: String, endDate: String) async throws -> RatesHistoricalObject {
+        guard let urlRequest = try RatesRounter.timeseries(base: base, symbols: symbols, startDate: startDate, endDate: endDate).asUrlRequest() else {
             throw error
         }
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
