@@ -32,8 +32,9 @@ class FluctuationViewModel: ObservableObject {
 struct RatesFluctuationView: View {
     
     @StateObject var viewModel = FluctuationViewModel()
-    
     @State private var searchText = ""
+    @State private var isPresentendBaseCurrencyFilter = false
+    @State private var isPresentendMultiCurrencyFilter = false
     
     var searchResult: [Fluctuation] {
         if searchText.isEmpty {
@@ -60,9 +61,12 @@ struct RatesFluctuationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 Button {
-                    print("Filtrar moedas")
+                    isPresentendMultiCurrencyFilter.toggle()
                 } label: {
                     Image(systemName: "slider.horizontal.3")
+                }
+                .fullScreenCover(isPresented: $isPresentendMultiCurrencyFilter) {
+                    MultiCurrenciesFilterView()
                 }
             }
         }
@@ -71,15 +75,19 @@ struct RatesFluctuationView: View {
     private var baseCurrencyPeriodFilterView: some View {
         HStack(alignment: .center, spacing: 16) {
             Button {
-                print("Filtrar moeda base")
+                isPresentendBaseCurrencyFilter.toggle()
             } label: {
                 Text("BRL")
                     .font(.system(size: 14, weight: .bold))
                     .padding(.init(top: 4, leading: 8, bottom: 4, trailing: 8))
                     .foregroundColor(.white)
                     .overlay(RoundedRectangle(cornerRadius: 8)
-                        .stroke(.white, lineWidth: 1))
+                        .stroke(.white, lineWidth: 1)
+                    )
             }
+            .fullScreenCover(isPresented: $isPresentendBaseCurrencyFilter, content: {
+                BaseCurrencyFilterView()
+            })
             .background(Color(UIColor.lightGray))
             .cornerRadius(8)
             
