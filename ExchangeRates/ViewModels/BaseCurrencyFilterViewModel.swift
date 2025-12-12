@@ -11,34 +11,31 @@ import Combine
 
 extension BaseCurrencyFilterView {
     @MainActor
-    class ViewModel: ObservableObject, CurrencySymbolDataProviderDelegate {
+    class ViewModel: ObservableObject, CurrencySymbolsDataProviderDelegate {
+        
         @Published var currencySymbols = [CurrencySymbolModel]()
+        private let dataProvider: CurrencySymbolsDataProvider
         
-        private let dataProvider: CurrencySymbolDataProvider
+        // Factory method - Mantém a lógica async se necessário
+        static func create() -> ViewModel {
+            let dataProvider = CurrencySymbolsDataProvider()
+            let viewModel = ViewModel(dataProvider: dataProvider)
+            dataProvider.delegate = viewModel
+            return viewModel
+        }
         
-        // Construtor que recebe o dataProvider
-        init(dataProvider: CurrencySymbolDataProvider) {
+        // Mude de private para fileprivate ou internal
+        fileprivate init(dataProvider: CurrencySymbolsDataProvider) {
             self.dataProvider = dataProvider
-            self.dataProvider.delegate = self
         }
         
-        // Construtor conveniência que cria o dataProvider
-        convenience init() {
-            // Como estamos dentro de um @MainActor class, podemos chamar o init
-            let dataProvider = CurrencySymbolDataProvider()
-            self.init(dataProvider: dataProvider)
-        }
-        
-        func doFetchCurrencySymbols(
-            by query: String = "",
-            from sources: [String] = [],
-            startDate: String? = nil,
-            endDate: String? = nil) {
+        func doFetchCurrencySymbols() {
             dataProvider.fetchSymbols(
-                by: query,
-                from: sources,
-                startDate: startDate ?? "",
-                endDate: endDate ?? "")
+                by: "",
+                from: [],
+                startDate: "",
+                endDate: ""
+            )
         }
         
         func success(model: [CurrencySymbolModel]) {

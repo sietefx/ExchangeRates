@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+
 extension Double {
     
     var color: Color {

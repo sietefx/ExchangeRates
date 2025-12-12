@@ -10,20 +10,20 @@ import SwiftUI
 import Combine
 
 extension MultiCurrenciesFilterView {
-    @MainActor class ViewModel: ObservableObject, CurrencySymbolDataProviderDelegate {
+    @MainActor class ViewModel: ObservableObject, CurrencySymbolsDataProviderDelegate {
         @Published var currencySymbols = [CurrencySymbolModel]()
         
-        private let dataProvider: CurrencySymbolDataProvider
+        private let dataProvider: CurrencySymbolsDataProvider
         
         // Initialize everything on MainActor - this is the cleanest approach
-        init(dataProvider: CurrencySymbolDataProvider) {
+        init(dataProvider: CurrencySymbolsDataProvider) {
             self.dataProvider = dataProvider
             self.dataProvider.delegate = self
         }
         
         // Convenience initializer that doesn't take parameters
         convenience init() {
-            self.init(dataProvider: CurrencySymbolDataProvider())
+            self.init(dataProvider: CurrencySymbolsDataProvider())
         }
         
         func doFetchCurrencySymbols(

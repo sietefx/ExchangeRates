@@ -12,9 +12,10 @@ struct BaseCurrencyFilterView: View {
     
     @Environment(\.dismiss) var dismiss
     
-    @StateObject var viewModel = ViewModel()
+    @StateObject var viewModel = ViewModel.create()
     @State private var searchText = ""
     @State private var selection: String?
+    @State private var isLoading = false
     
     var searchReults: [CurrencySymbolModel] {
         if searchText.isEmpty {
@@ -27,13 +28,25 @@ struct BaseCurrencyFilterView: View {
     }
     // Aqui é onde chama os métodos para renderizar a viewModel
     var body: some View {
-        NavigationView {
-            listCurrenciesView
+            NavigationView {
+                ZStack {
+                    if isLoading && viewModel.currencySymbols.isEmpty {
+                        ProgressView("Carregando moedas...")
+                    } else {
+                        listCurrenciesView
+                    }
+                }
+            }
+            .onAppear {
+                isLoading = true
+                viewModel.doFetchCurrencySymbols()
+                // Simula um tempo de carregamento
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    isLoading = false
+                }
+            }
         }
-        .onAppear() {
-            viewModel.doFetchCurrencySymbols()
-        }
-    }
+    
     private var listCurrenciesView: some View {
         List(searchReults, id: \.symbol, selection: $selection) { item in
             HStack {
