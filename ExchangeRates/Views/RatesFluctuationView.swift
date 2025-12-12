@@ -12,6 +12,7 @@ struct RatesFluctuationView: View {
     
     @StateObject var viewModel = ViewModel()
     @State private var searchText = ""
+    @State private var viewDidLoad = true
     @State private var isPresentendBaseCurrencyFilter = false
     @State private var isPresentendMultiCurrencyFilter = false
     
@@ -50,7 +51,10 @@ struct RatesFluctuationView: View {
             }
         }
         .onAppear {
-            viewModel.doFetchRatesFluctuations(timeRange: .today)
+            if viewDidLoad {
+                viewDidLoad.toggle()
+                viewModel.doFetchRatesFluctuations(timeRange: .today)
+            }
         }
     }
     
@@ -74,40 +78,44 @@ struct RatesFluctuationView: View {
             .cornerRadius(8)
             
             Button {
-                print("1 dia")
+                viewModel.doFetchRatesFluctuations(timeRange: .today)
             } label: {
                 Text("1 dia")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.blue)
-                    .underline()
+                    .foregroundColor(viewModel.timeRange == .today ? .blue : .gray)
+                    .underline(viewModel.timeRange == .today)
             }
             Button {
-                print("7 dias")
+                viewModel.doFetchRatesFluctuations(timeRange: .thisWeek)
             } label: {
                 Text("7 dias")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(viewModel.timeRange == .thisWeek ? .blue : .gray)
+                    .underline(viewModel.timeRange == .thisWeek)
             }
             Button {
-                print("1 Mês")
+                viewModel.doFetchRatesFluctuations(timeRange: .thisMonth)
             } label: {
                 Text("1 Mês")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(viewModel.timeRange == .thisMonth ? .blue : .gray)
+                    .underline(viewModel.timeRange == .thisMonth)
             }
             Button {
-                print("6 Meses")
+                viewModel.doFetchRatesFluctuations(timeRange: .thisSemester)
             } label: {
                 Text("6 Meses")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(viewModel.timeRange == .thisSemester ? .blue : .gray)
+                    .underline(viewModel.timeRange == .thisSemester)
             }
             Button {
-                print("1 Ano")
+                viewModel.doFetchRatesFluctuations(timeRange: .thisYear)
             } label: {
                 Text("1 Ano")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(viewModel.timeRange == .thisYear ? .blue : .gray)
+                    .underline(viewModel.timeRange == .thisYear)
             }
         }
         .padding(.top, 8)
