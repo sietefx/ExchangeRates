@@ -44,7 +44,7 @@ enum RatesRounter {
             url.append(queryItems: items)
         }
         
-        var request = URLRequest(url: url, timeoutInterval: 30)
+        var request = URLRequest(url: url, timeoutInterval: 60)
         request.httpMethod = HttpMethod.get.rawValue
         request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apikey")
         return request
