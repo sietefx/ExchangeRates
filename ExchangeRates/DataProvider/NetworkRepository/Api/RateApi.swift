@@ -14,7 +14,7 @@ enum HttpMethod: String {
 struct RatesApi {
     
     static let baseUrl = "https://api.apilayer.com/exchangerates_data"
-    static let apiKey = "Q0g1lU4epY74oehRnHap6z6LIYzWtxnT"
+    static let apiKey = "Zm5SyEv4qBMaERlpKBfA3Wc4gtRWfkfj"
     static let fluctuation = "/fluctuation"
     static let symbols = "/symbols"
     static let timeseries = "/timeseries"

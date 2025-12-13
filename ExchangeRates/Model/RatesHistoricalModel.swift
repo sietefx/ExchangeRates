@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RateHistoricalModel: Identifiable {
+struct RatesHistoricalModel: Identifiable {
     let id = UUID()
     var symbol: String
     var period: Date

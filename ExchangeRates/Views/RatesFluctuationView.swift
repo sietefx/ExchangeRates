@@ -8,8 +8,17 @@
 import SwiftUI
 import Combine
 
-struct RatesFluctuationView: View {
+struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenciesFilterViewDelegate {
+    func didSelected(_ currencies: [String]) {
+        viewModel.currencies = currencies
+        viewModel.doFetchRatesFluctuations(timeRange: .today)
+    }
     
+    func didSelected(_ baseCurrency: String) {
+        viewModel.baseCurrency = baseCurrency
+        viewModel.doFetchRatesFluctuations(timeRange: .today)
+    }
+        
     @StateObject var viewModel = ViewModel()
     @State private var searchText = ""
     @State private var viewDidLoad = true
@@ -46,7 +55,7 @@ struct RatesFluctuationView: View {
                     Image(systemName: "slider.horizontal.3")
                 }
                 .fullScreenCover(isPresented: $isPresentendMultiCurrencyFilter) {
-                    MultiCurrenciesFilterView()
+                    MultiCurrenciesFilterView(delegate: self)
                 }
             }
         }
@@ -63,7 +72,7 @@ struct RatesFluctuationView: View {
             Button {
                 isPresentendBaseCurrencyFilter.toggle()
             } label: {
-                Text("BRL")
+                Text(viewModel.baseCurrency)
                     .font(.system(size: 14, weight: .bold))
                     .padding(.init(top: 4, leading: 8, bottom: 4, trailing: 8))
                     .foregroundColor(.white)
@@ -72,7 +81,7 @@ struct RatesFluctuationView: View {
                     )
             }
             .fullScreenCover(isPresented: $isPresentendBaseCurrencyFilter, content: {
-                BaseCurrencyFilterView()
+                BaseCurrencyFilterView(delegate: self)
             })
             .background(Color(UIColor.lightGray))
             .cornerRadius(8)
@@ -151,6 +160,13 @@ struct RatesFluctuationView: View {
         .listStyle(.plain)
     }
 }
+
+//extension RatesFluctuationView: BaseCurrencyFilterViewDelegate {
+//    func didSelected(_ baseCurrency: String) {
+//        viewModel.baseCurrency = baseCurrency
+//        viewModel.doFetchRatesFluctuations(timeRange: .today)
+//    }
+//}
 
 #Preview {
     RatesFluctuationView()

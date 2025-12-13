@@ -8,12 +8,18 @@
 import SwiftUI
 import Combine
 
+protocol MultiCurrenciesFilterViewDelegate: View {
+    func didSelected(_ currencies: [String])
+}
+
 struct MultiCurrenciesFilterView: View {
     
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel = ViewModel()
     @State private var searchText = ""
     @State private var selections: [String] = []
+    
+    var delegate: (any MultiCurrenciesFilterViewDelegate)?
     
     var searchReults: [CurrencySymbolModel] {
         if searchText.isEmpty {
@@ -70,9 +76,10 @@ struct MultiCurrenciesFilterView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             Button {
+                delegate?.didSelected(selections)
                 dismiss()
             } label: {
-                Text("Ok")
+                Text(selections.isEmpty ? "Cancelar" : "Ok")
                     .fontWeight(.bold)
             }
         }

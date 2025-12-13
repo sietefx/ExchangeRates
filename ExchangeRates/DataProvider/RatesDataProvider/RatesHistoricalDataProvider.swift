@@ -7,11 +7,11 @@
 
 import Foundation
 
-protocol RatesHistoricalDataProviderDeletegate: DataProviderManagerDelegate {
-    func success(model: RatesHistoricalObject)
+protocol RatesHistoricalDataProviderDelegate: DataProviderManagerDelegate {
+    func success(model: RatesHistoricalModel)
 }
 
-class RatesHistoricalDataProvider: DataProviderManager<RatesHistoricalDataProviderDeletegate, RatesHistoricalObject> {
+class RatesHistoricalDataProvider: DataProviderManager<RatesHistoricalDataProviderDelegate, RatesHistoricalModel> {
     
     private let ratesStore: RatesStore
     
@@ -20,10 +20,12 @@ class RatesHistoricalDataProvider: DataProviderManager<RatesHistoricalDataProvid
     }
     
     func fetchTimeseries(by base: String, from symbols: [String], startDate: String, endDate: String) {
-        Task.init {
+        Task {
             do {
-                let model = try await ratesStore.fetchTimeseries(by: base, from: symbols, startDate: startDate, endDate: endDate)
-                delegate?.success(model: model)
+                let object = try await ratesStore.fetchTimeseries(by: base, from: symbols, startDate: startDate, endDate: endDate)
+                delegate?.success(model: object.flatMap({ (period, rates) -> [RatesHistoricalModel] in
+                    return rates.map { RatesHistoricalModel(symbol: $0, period: period.toDate(), endRate: $1) }
+                }))
             } catch {
                 delegate?.errorData(delegate, error: error)
             }
