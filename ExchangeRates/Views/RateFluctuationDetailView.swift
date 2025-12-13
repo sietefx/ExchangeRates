@@ -24,6 +24,9 @@ struct RateFluctuationDetailView: View {
         .padding(.leading, 8)
         .padding(.trailing, 8)
         .navigationTitle(viewModel.title)
+        .onAppear {
+            viewModel.startStateView(baseCurrency: baseCurrency, rateFluctuation: rateFluctuation, timeRange: .today)
+        }
     }
     private var valuesView: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -33,7 +36,7 @@ struct RateFluctuationDetailView: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(viewModel.changePct.color)
                 .background(viewModel.changePct.color.opacity(0.2))
-            Text(viewModel.change.formatter(decimalPlaces: 4, with: true))
+            Text(viewModel.changeDescription)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(viewModel.change.color)
             Spacer()
@@ -115,7 +118,7 @@ struct RateFluctuationDetailView: View {
             }
         }
         .chartXAxis {
-            AxisMarks(preset: .aligned) { date in
+            AxisMarks(preset: .aligned, values: .stride(by: viewModel.xAxisStride, count: viewModel.xAxisStrideCount)) { date in
                 AxisGridLine()
                 AxisValueLabel(viewModel.xAxisLabelFormatStyle(for: date.as(Date.self) ?? Date()))
             }
@@ -150,8 +153,9 @@ struct RateFluctuationDetailView: View {
                 .font(.system(size: 16))
         }
         .fullScreenCover(isPresented: $isPresentedBaseCurrencyFilter, content: {
-            BaseCurrencyFilterView()
+            BaseCurrencyFilterView(delegate: self)
         })
+        .opacity(viewModel.ratesFluctuation.count == 0 ? 0 : 1)
     }
     
     private var comparationScrollView: some View {
@@ -159,7 +163,7 @@ struct RateFluctuationDetailView: View {
             LazyHGrid(rows: [GridItem(.flexible())], alignment: .center) {
                 ForEach(viewModel.ratesFluctuation) { fluctuation in
                     Button {
-                        print("Comparação")
+                        viewModel.doComparation(with: fluctuation)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(fluctuation.symbol) / \(baseCurrency)")
@@ -186,6 +190,12 @@ struct RateFluctuationDetailView: View {
                 }
             }
         }
+    }
+}
+
+extension RateFluctuationDetailView: BaseCurrencyFilterViewDelegate {
+    func didSelected(_ baseCurrency: String) {
+        viewModel.doFilter(by: baseCurrency)
     }
 }
 

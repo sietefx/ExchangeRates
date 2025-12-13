@@ -38,9 +38,23 @@ extension MultiCurrenciesFilterView {
                 endDate: endDate ?? "")
         }
         
+        // MARK: - CurrencySymbolsDataProviderDelegate
         // This is on MainActor automatically because the class is @MainActor
         func success(model: [CurrencySymbolModel]) {
             self.currencySymbols = model.sorted { $0.symbol < $1.symbol }
+        }
+        
+        // MARK: - DataProviderManagerDelegate (protocolo pai)
+        func success(model: Any) {
+            // Desembrulhe para o tipo específico
+            if let currencySymbols = model as? [CurrencySymbolModel] {
+                self.success(model: currencySymbols) // Chama o método específico
+            }
+        }
+        
+        func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
+            print("Error fetching currency symbols: \(error.localizedDescription)")
+            // Aqui você pode adicionar lógica para mostrar erro na UI
         }
     }
 }

@@ -20,7 +20,7 @@ enum TimeRangeEnum {
             
             switch self {
             case .today:
-                return now // Hoje é a data atual
+                return calendar.date(byAdding: .day, value: -1, to: now) ?? now
             case .thisWeek:
                 return calendar.date(byAdding: .day, value: -6, to: now) ?? now // 6 dias atrás
             case .thisMonth:

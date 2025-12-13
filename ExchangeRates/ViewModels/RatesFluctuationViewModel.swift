@@ -11,9 +11,6 @@ import Combine
 
 extension RatesFluctuationView {
     @MainActor class ViewModel: ObservableObject, RateFluctuationDataProviderDelegate {
-        func error(message: String) {
-            print("Error: \(message)")
-        }
         
         @Published var ratesFluctuations = [RateFluctuationModel]()
         @Published var timeRange: TimeRangeEnum = .today
@@ -70,14 +67,33 @@ extension RatesFluctuationView {
             }
         }
         
+        // MARK: - RateFluctuationDataProviderDelegate
         func success(model: [RateFluctuationModel]) {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 withAnimation {
                     self.ratesFluctuations = model.sorted { $0.symbol < $1.symbol }
                     print("Sucesso! Recebeu \(model.count) moedas.")
                     print("Moedas recebidas: \(model.map { $0.symbol })")
                 }
             }
+        }
+        
+        // MARK: - DataProviderManagerDelegate (protocolo pai)
+        func success(model: Any) {
+            // Desembrulhe para o tipo específico
+            if let fluctuations = model as? [RateFluctuationModel] {
+                success(model: fluctuations) // Chama o método específico
+            }
+        }
+        
+        func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
+            print("Error fetching rate fluctuations: \(error.localizedDescription)")
+            // Aqui você pode adicionar lógica para mostrar erro na UI
+        }
+        
+        // Remova ou renomeie este método para evitar conflito
+        func error(message: String) {
+            print("Error: \(message)")
         }
         
         // Método para adicionar/remover moedas

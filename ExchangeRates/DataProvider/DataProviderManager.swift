@@ -12,14 +12,14 @@ protocol DataProviderManagerDelegate {
     func errorData(_ provider: DataProviderManagerDelegate?, error: Error)
 }
 
-extension DataProviderManagerDelegate {
-    func success(model: Any) {
-        preconditionFailure("This method must be overridden")
-    }
-    func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
-        print(error.localizedDescription)
-    }
-}
+//extension DataProviderManagerDelegate {
+//    func success(model: Any) {
+//        preconditionFailure("This method must be overridden")
+//    }
+//    func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
+//        print(error.localizedDescription)
+//    }
+//}
 
 class DataProviderManager<T, S> {
     

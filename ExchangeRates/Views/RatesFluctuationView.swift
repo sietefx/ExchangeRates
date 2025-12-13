@@ -133,11 +133,11 @@ struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenci
     // aplicação da search engine
     private var ratesFluctuationListView: some View {
         List(searchResult) { fluctuation in
-            NavigationLink(destination: RateFluctuationDetailView(baseCurrency: "BRL", rateFluctuation: fluctuation)) {
+            NavigationLink(destination: RateFluctuationDetailView(baseCurrency: viewModel.baseCurrency, rateFluctuation: fluctuation)) {
                 VStack {
                     // centralizar e alinhar objetos
                     HStack(alignment: .center, spacing: 8) {
-                        Text("\(fluctuation.symbol) / BRL")
+                        Text("\(fluctuation.symbol) / \(viewModel.baseCurrency)")
                             .font(.system(size: 14, weight: .medium))
                         Text(fluctuation.endRate.formatter(decimalPlaces: 2))
                             .font(.system(size: 14, weight: .bold))
@@ -160,13 +160,6 @@ struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenci
         .listStyle(.plain)
     }
 }
-
-//extension RatesFluctuationView: BaseCurrencyFilterViewDelegate {
-//    func didSelected(_ baseCurrency: String) {
-//        viewModel.baseCurrency = baseCurrency
-//        viewModel.doFetchRatesFluctuations(timeRange: .today)
-//    }
-//}
 
 #Preview {
     RatesFluctuationView()

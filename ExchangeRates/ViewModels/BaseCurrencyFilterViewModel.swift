@@ -11,7 +11,7 @@ import Combine
 
 extension BaseCurrencyFilterView {
     @MainActor
-    class ViewModel: ObservableObject, CurrencySymbolsDataProviderDelegate {
+    class ViewModel: ObservableObject, CurrencySymbolsDataProviderDelegate, DataProviderManagerDelegate {
         
         @Published var currencySymbols = [CurrencySymbolModel]()
         private let dataProvider: CurrencySymbolsDataProvider
@@ -40,6 +40,29 @@ extension BaseCurrencyFilterView {
         
         func success(model: [CurrencySymbolModel]) {
             self.currencySymbols = model.sorted { $0.symbol < $1.symbol }
+        }
+        
+        // MARK: - DataProviderManagerDelegate
+        // Implemente os métodos EXATAMENTE como o protocolo exige:
+        func success(model: Any) {
+            // Desembrulhe o modelo baseado no tipo
+            if let currencySymbols = model as? [CurrencySymbolModel] {
+                self.currencySymbols = currencySymbols.sorted { $0.symbol < $1.symbol }
+            }
+        }
+        
+        func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
+            print("Error from provider: \(error.localizedDescription)")
+            // Aqui você pode adicionar lógica para mostrar erros na UI se quiser
+        }
+        
+        // Se quiser manter seus métodos personalizados também, pode:
+        func didStartRequest() {
+            // Lógica opcional de loading
+        }
+
+        func didFinishRequest() {
+            // Lógica opcional de fim de loading
         }
     }
 }
