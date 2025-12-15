@@ -8,44 +8,45 @@
 import SwiftUI
 import Combine
 
-struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenciesFilterViewDelegate {
-    func didSelected(_ currencies: [String]) {
-        viewModel.currencies = currencies
-        viewModel.doFetchRatesFluctuations(timeRange: .today)
-    }
-    
-    func didSelected(_ baseCurrency: String) {
-        viewModel.baseCurrency = baseCurrency
-        viewModel.doFetchRatesFluctuations(timeRange: .today)
-    }
-        
+struct RatesFluctuationView: View {
+
+    // MARK: - ViewModel
     @StateObject var viewModel = ViewModel()
+
+    // MARK: - UI State
     @State private var searchText = ""
     @State private var viewDidLoad = true
     @State private var isPresentendBaseCurrencyFilter = false
     @State private var isPresentendMultiCurrencyFilter = false
-    
-    var searchResult: [RateFluctuationModel] {
-        if searchText.isEmpty {
-            return viewModel.ratesFluctuations
-        } else {
-            return viewModel.ratesFluctuations.filter {
-                $0.symbol.contains(searchText.uppercased()) ||
-                $0.change.formatter(decimalPlaces: 4).contains(searchText.uppercased()) ||
-                $0.changePct.toPercentage().contains(searchText.uppercased()) ||
-                $0.endRate.formatter(decimalPlaces: 2).contains(searchText.uppercased())
-            }
-        }
-    }
-    
+
+    // MARK: - Body
     var body: some View {
         NavigationView {
             VStack {
-                baseCurrencyPeriodFilterView
-                ratesFluctuationListView
-                Spacer()
+                
+                if case .loading = viewModel.currentState {
+                    ProgressView()
+                        .scaleEffect(2.2, anchor: .center)
+                } else if case .success = viewModel.currentState {
+                    baseCurrencyPeriodFilterView
+                    ratesFluctuationListView
+                } else if case .failure = viewModel.currentState {
+                    errorView
+                }
             }
-            .searchable(text: $searchText)
+            .searchable(text: $searchText, prompt: "procurar moeda")
+            .onChange(of: searchText) { searchText in
+                if searchText.isEmpty {
+                    viewModel.searchResults = viewModel.ratesFluctuations
+                } else {
+                    viewModel.searchResults = viewModel.ratesFluctuations.filter {
+                        $0.symbol.contains(searchText.uppercased()) ||
+                        $0.change.formatter(decimalPlaces: 6).contains(searchText) ||
+                        $0.changePct.formatter(decimalPlaces: 6).contains(searchText) ||
+                        $0.endRate.formatter(decimalPlaces: 6).contains(searchText)
+                    }
+                }
+            }
             .navigationTitle("Conversão de moedas")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -55,103 +56,99 @@ struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenci
                     Image(systemName: "slider.horizontal.3")
                 }
                 .fullScreenCover(isPresented: $isPresentendMultiCurrencyFilter) {
-                    MultiCurrenciesFilterView(delegate: self)
+                    MultiCurrenciesFilterView()
                 }
             }
         }
-        .onAppear {
-            if viewDidLoad {
-                viewDidLoad.toggle()
-                viewModel.doFetchRatesFluctuations(timeRange: .today)
-            }
-        }
     }
-    
+
+    // MARK: - Start View
+    private var startView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.up.arrow.down")
+                .font(.system(size: 42))
+                .foregroundColor(.gray)
+
+            Text("Selecione as moedas para iniciar")
+                .font(.headline)
+                .foregroundColor(.gray)
+        }
+        .padding()
+    }
+
+    // MARK: - Base Currency + Period Filter
     private var baseCurrencyPeriodFilterView: some View {
         HStack(alignment: .center, spacing: 16) {
+
             Button {
                 isPresentendBaseCurrencyFilter.toggle()
             } label: {
                 Text(viewModel.baseCurrency)
                     .font(.system(size: 14, weight: .bold))
-                    .padding(.init(top: 4, leading: 8, bottom: 4, trailing: 8))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .foregroundColor(.white)
-                    .overlay(RoundedRectangle(cornerRadius: 8)
-                        .stroke(.white, lineWidth: 1)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.white, lineWidth: 1)
                     )
             }
-            .fullScreenCover(isPresented: $isPresentendBaseCurrencyFilter, content: {
-                BaseCurrencyFilterView(delegate: self)
-            })
-            .background(Color(UIColor.lightGray))
+            .fullScreenCover(isPresented: $isPresentendBaseCurrencyFilter) {
+                BaseCurrencyFilterView()
+            }
+            .background(Color.gray)
             .cornerRadius(8)
-            
-            Button {
-                viewModel.doFetchRatesFluctuations(timeRange: .today)
-            } label: {
-                Text("1 dia")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .today ? .blue : .gray)
-                    .underline(viewModel.timeRange == .today)
-            }
-            Button {
-                viewModel.doFetchRatesFluctuations(timeRange: .thisWeek)
-            } label: {
-                Text("7 dias")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .thisWeek ? .blue : .gray)
-                    .underline(viewModel.timeRange == .thisWeek)
-            }
-            Button {
-                viewModel.doFetchRatesFluctuations(timeRange: .thisMonth)
-            } label: {
-                Text("1 Mês")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .thisMonth ? .blue : .gray)
-                    .underline(viewModel.timeRange == .thisMonth)
-            }
-            Button {
-                viewModel.doFetchRatesFluctuations(timeRange: .thisSemester)
-            } label: {
-                Text("6 Meses")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .thisSemester ? .blue : .gray)
-                    .underline(viewModel.timeRange == .thisSemester)
-            }
-            Button {
-                viewModel.doFetchRatesFluctuations(timeRange: .thisYear)
-            } label: {
-                Text("1 Ano")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .thisYear ? .blue : .gray)
-                    .underline(viewModel.timeRange == .thisYear)
-            }
+
+            periodButton(title: "1 dia", range: .today)
+            periodButton(title: "7 dias", range: .thisWeek)
+            periodButton(title: "1 mês", range: .thisMonth)
+            periodButton(title: "6 meses", range: .thisSemester)
+            periodButton(title: "1 ano", range: .thisYear)
         }
         .padding(.top, 8)
         .padding(.bottom, 16)
     }
-    // aplicação da search engine
+
+    private func periodButton(title: String, range: TimeRangeEnum) -> some View {
+        Button {
+            viewModel.doFetchRatesFluctuations(timeRange: range)
+        } label: {
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(viewModel.timeRange == range ? .blue : .gray)
+                .underline(viewModel.timeRange == range)
+        }
+    }
+
+    // MARK: - List
     private var ratesFluctuationListView: some View {
-        List(searchResult) { fluctuation in
-            NavigationLink(destination: RateFluctuationDetailView(baseCurrency: viewModel.baseCurrency, rateFluctuation: fluctuation)) {
+        List(viewModel.searchResults) { fluctuation in
+            NavigationLink(
+                destination: RateFluctuationDetailView(
+                    baseCurrency: viewModel.baseCurrency,
+                    fromCurrency: fluctuation.symbol
+                )
+            ) {
                 VStack {
-                    // centralizar e alinhar objetos
-                    HStack(alignment: .center, spacing: 8) {
+                    HStack(spacing: 8) {
                         Text("\(fluctuation.symbol) / \(viewModel.baseCurrency)")
                             .font(.system(size: 14, weight: .medium))
+
                         Text(fluctuation.endRate.formatter(decimalPlaces: 2))
                             .font(.system(size: 14, weight: .bold))
                             .frame(maxWidth: .infinity, alignment: .trailing)
+
                         Text(fluctuation.change.formatter(decimalPlaces: 4, with: true))
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(fluctuation.change.color)
+
                         Text("(\(fluctuation.changePct.toPercentage()))")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(fluctuation.change.color)
                     }
+
                     Divider()
-                        .padding(.leading, -20)
-                        .padding(.trailing, -40)
+                        .padding(.horizontal, -20)
                 }
             }
             .listRowSeparator(.hidden)
@@ -159,8 +156,34 @@ struct RatesFluctuationView: View, BaseCurrencyFilterViewDelegate, MultiCurrenci
         }
         .listStyle(.plain)
     }
+
+    // MARK: - Error View
+    private var errorView: some View {
+        VStack(alignment: .center) {
+            Spacer()
+
+            Image(systemName: "wifi.exclamationmark")
+                .resizable()
+                .frame(width: 54, height: 44)
+                .padding(.bottom, 4)
+
+            Text("Ocorreu um erro na busca das flutuações das taxas.")
+                .font(.headline.bold())
+                .multilineTextAlignment(.center)
+            
+            Button {
+                viewModel.doFetchRatesFluctuations(timeRange: .today)
+            } label: {
+                Text("Tentar novamente?")
+            }
+            .padding(.top, 4)
+            Spacer()
+        }
+        .padding()
+    }
 }
 
 #Preview {
     RatesFluctuationView()
 }
+

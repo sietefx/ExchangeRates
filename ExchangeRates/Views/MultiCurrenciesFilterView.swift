@@ -8,44 +8,44 @@
 import SwiftUI
 import Combine
 
-protocol MultiCurrenciesFilterViewDelegate: View {
+protocol MultiCurrenciesFilterViewDelegate {
     func didSelected(_ currencies: [String])
 }
 
 struct MultiCurrenciesFilterView: View {
     
     @Environment(\.dismiss) var dismiss
+    
     @StateObject var viewModel = ViewModel()
+    
     @State private var searchText = ""
-    @State private var selections: [String] = []
+    @State private var selection: [String] = []
     
-    var delegate: (any MultiCurrenciesFilterViewDelegate)?
-    
-    var searchReults: [CurrencySymbolModel] {
-        if searchText.isEmpty {
-            return viewModel.currencySymbols
-        } else {
-            return viewModel.currencySymbols.filter {
-                $0.symbol.contains(searchText.uppercased()) || $0.fullName.uppercased().contains(searchText.uppercased())
-            }
-        }
-    }
+    var delegate: MultiCurrenciesFilterViewDelegate?
     
     var body: some View {
         NavigationView {
-            listCurrenciesView
+            if case .loading = viewModel.currentState {
+                ProgressView()
+                    .scaleEffect(2.2, anchor: .center)
+            } else if case .success = viewModel.currentState {
+                listCurrenciesView
+            } else if case .failure = viewModel.currentState {
+                errorView
+            }
         }
-        .onAppear() {
+        .onAppear {
             viewModel.doFetchCurrencySymbols()
         }
     }
+    
     private var listCurrenciesView: some View {
-        List(searchReults, id: \.symbol) { item in
+        List(viewModel.searchResults, id: \.symbol) { item in
             Button {
-                if selections.contains(item.symbol) {
-                    selections.removeAll { $0 == item.symbol }
+                if selection.contains(item.symbol) {
+                    selection.removeAll { $0 == item.symbol }
                 } else {
-                    selections.append(item.symbol)
+                    selection.append(item.symbol)
                 }
             } label: {
                 HStack {
@@ -56,37 +56,71 @@ struct MultiCurrenciesFilterView: View {
                             .font(.system(size: 14, weight: .semibold))
                         Text(item.fullName)
                             .font(.system(size: 14, weight: .semibold))
-                        // adiciona um espaço entre o texto e o checkmark
                         Spacer()
                     }
-                    // Aqui coloca sinais de checagem com a lógica de select/deselect
                     Image(systemName: "checkmark")
-                        .opacity(selections.contains(item.symbol) ? 1.0 : 0.0)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.5), value: selections)
+                        .opacity(selection.contains(item.symbol) ? 1 : 0)
                     Spacer()
                 }
-                .foregroundColor(.primary)
             }
-            
-            
-            
+            .foregroundStyle(.primary)
         }
-        .searchable(text: $searchText)
+        .searchable(text: $searchText, prompt: "Buscar moeda base")
+        .onChange(of: searchText) { searchText in
+            if searchText.isEmpty {
+                viewModel.searchResults = viewModel.currencySymbols
+            } else {
+                viewModel.searchResults = viewModel.currencySymbols.filter {
+                    $0.symbol.contains(searchText.uppercased()) ||
+                    $0.fullName.uppercased().contains(searchText.uppercased())
+                }
+            }
+        }
         .navigationTitle("Filtrar Moedas")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             Button {
-                delegate?.didSelected(selections)
+                delegate?.didSelected(selection)
                 dismiss()
             } label: {
-                Text(selections.isEmpty ? "Cancelar" : "Ok")
+                Text(selection.isEmpty ? "Cancelar" : "Ok")
                     .fontWeight(.bold)
             }
         }
     }
+    
+    private var errorView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            Image(systemName: "exclamationmark.triangle")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 60, height: 60)
+                .foregroundColor(.orange)
+            
+            Text("Não foi possível carregar os símbolos das moedas.")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+            
+            Button {
+                viewModel.doFetchCurrencySymbols()
+            } label: {
+                Label("Tentar novamente", systemImage: "arrow.clockwise")
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            
+            Spacer()
+        }
+        .padding()
+    }
 }
 
-#Preview {
-    MultiCurrenciesFilterView()
+struct CurrencySelectionFilterView_Previews: PreviewProvider {
+        static var previews: some View {
+            MultiCurrenciesFilterView()
+    }
 }
-

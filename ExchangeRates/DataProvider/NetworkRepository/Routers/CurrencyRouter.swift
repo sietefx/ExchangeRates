@@ -19,15 +19,17 @@ enum CurrencyRouter {
         }
     }
     
-    func asURLRequest() throws -> URLRequest? {
-        // Append the path to the base URL
-        guard let url = URL(string: RatesApi.baseUrl + path) else { return nil }
+    func asURLRequest() -> URLRequest? {
+        guard let url = URL(string: RatesApi.baseUrl) else { return nil }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
         
         switch self {
         case .symbols:
-            var request = URLRequest(url: url, timeoutInterval: Double.infinity)
+            var request = URLRequest(url: url.appendingPathComponent(path), timeoutInterval: Double.infinity)
             request.httpMethod = HttpMethod.get.rawValue
-            request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apikey")
+            request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apiKey")
             return request
         }
     }

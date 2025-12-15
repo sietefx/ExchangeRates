@@ -10,51 +10,48 @@ import SwiftUI
 import Combine
 
 extension MultiCurrenciesFilterView {
-    @MainActor class ViewModel: ObservableObject, CurrencySymbolsDataProviderDelegate {
+    @MainActor class ViewModel: ObservableObject {
+        
+        enum ViewState {
+            case start
+            case loading
+            case success
+            case failure
+        }
+        
         @Published var currencySymbols = [CurrencySymbolModel]()
+        @Published var searchResults = [CurrencySymbolModel]()
+        @Published var currentState: ViewState = .start
         
-        private let dataProvider: CurrencySymbolsDataProvider
+        private let dataProvider: CurrencySymbolsDataProvider?
+        private var cancelables = Set<AnyCancellable>()
         
-        // Initialize everything on MainActor - this is the cleanest approach
-        init(dataProvider: CurrencySymbolsDataProvider) {
+        // init diferente do BaseCurrencyFilterView
+        init(dataProvider: CurrencySymbolsDataProvider = CurrencySymbolsDataProvider()) {
             self.dataProvider = dataProvider
-            self.dataProvider.delegate = self
         }
+        // ver se essa linha é que vai dar erro no futuro
+//        @MainActor
+//        convenience init() {
+//            self.init(dataProvider: CurrencySymbolsDataProvider())
+//        }
         
-        // Convenience initializer that doesn't take parameters
-        convenience init() {
-            self.init(dataProvider: CurrencySymbolsDataProvider())
-        }
-        
-        func doFetchCurrencySymbols(
-            by query: String = "",
-            from sources: [String] = [],
-            startDate: String? = nil,
-            endDate: String? = nil) {
-            dataProvider.fetchSymbols(
-                by: query,
-                from: sources,
-                startDate: startDate ?? "",
-                endDate: endDate ?? "")
-        }
-        
-        // MARK: - CurrencySymbolsDataProviderDelegate
-        // This is on MainActor automatically because the class is @MainActor
-        func success(model: [CurrencySymbolModel]) {
-            self.currencySymbols = model.sorted { $0.symbol < $1.symbol }
-        }
-        
-        // MARK: - DataProviderManagerDelegate (protocolo pai)
-        func success(model: Any) {
-            // Desembrulhe para o tipo específico
-            if let currencySymbols = model as? [CurrencySymbolModel] {
-                self.success(model: currencySymbols) // Chama o método específico
-            }
-        }
-        
-        func errorData(_ provider: DataProviderManagerDelegate?, error: Error) {
-            print("Error fetching currency symbols: \(error.localizedDescription)")
-            // Aqui você pode adicionar lógica para mostrar erro na UI
+        func doFetchCurrencySymbols() {
+            currentState = .loading
+            dataProvider?.fetchSymbols()
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        self.currentState = .success
+                    case .failure(_):
+                        self.currentState = .failure
+                    }
+                }, receiveValue: { currencySymbols in
+                    withAnimation {
+                        self.currencySymbols = currencySymbols.sorted { $0.symbol < $1.symbol }
+                        self.searchResults = self.currencySymbols
+                    }
+                }).store(in: &cancelables)
         }
     }
 }
