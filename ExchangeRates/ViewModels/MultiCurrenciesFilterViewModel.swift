@@ -26,15 +26,9 @@ extension MultiCurrenciesFilterView {
         private let dataProvider: CurrencySymbolsDataProvider?
         private var cancelables = Set<AnyCancellable>()
         
-        // init diferente do BaseCurrencyFilterView
-        init(dataProvider: CurrencySymbolsDataProvider = CurrencySymbolsDataProvider()) {
-            self.dataProvider = dataProvider
+        init(dataProvider: CurrencySymbolsDataProvider? = nil) {
+            self.dataProvider = dataProvider ?? CurrencySymbolsDataProvider()
         }
-        // ver se essa linha é que vai dar erro no futuro
-//        @MainActor
-//        convenience init() {
-//            self.init(dataProvider: CurrencySymbolsDataProvider())
-//        }
         
         func doFetchCurrencySymbols() {
             currentState = .loading

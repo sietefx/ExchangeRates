@@ -111,6 +111,9 @@ struct BaseCurrencyFilterView: View {
 }
 
 struct BaseCurrencyFilterView_Previews: PreviewProvider {
+    
+    // Adicione o @MainActor aqui para isolar este bloco ao Main Thread.
+    @MainActor
     static var previews: some View {
         BaseCurrencyFilterView()
     }

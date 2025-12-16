@@ -9,6 +9,7 @@ import SwiftUI
 import Combine
 
 struct RatesFluctuationView: View {
+    
 
     // MARK: - ViewModel
     @StateObject var viewModel = ViewModel()
@@ -58,6 +59,8 @@ struct RatesFluctuationView: View {
                 .fullScreenCover(isPresented: $isPresentendMultiCurrencyFilter) {
                     MultiCurrenciesFilterView()
                 }
+            }
+            .onAppear {                            viewModel.doFetchRatesFluctuations(timeRange: .today)
             }
         }
     }
@@ -183,6 +186,7 @@ struct RatesFluctuationView: View {
     }
 }
 
+// Exemplo em RateFluctuationDetailView.swift
 #Preview {
     RatesFluctuationView()
 }

@@ -1,5 +1,5 @@
 //
-//  RatesRouter.swift
+//  CurrencyRouter.swift
 //  ExchangeRates
 //
 //  Created by Gabriel Felix on 14/11/25.
@@ -20,17 +20,16 @@ enum CurrencyRouter {
     }
     
     func asURLRequest() -> URLRequest? {
-        guard let url = URL(string: RatesApi.baseUrl) else { return nil }
+        // 1. Combina URL Base com o Path (/symbols)
+        guard let fullURL = URL(string: RatesApi.baseUrl)?.appendingPathComponent(path) else { return nil }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
+        // 2. Cria a Request
+        var request = URLRequest(url: fullURL, timeoutInterval: Double.infinity)
+        request.httpMethod = HttpMethod.get.rawValue
         
-        switch self {
-        case .symbols:
-            var request = URLRequest(url: url.appendingPathComponent(path), timeoutInterval: Double.infinity)
-            request.httpMethod = HttpMethod.get.rawValue
-            request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apiKey")
-            return request
-        }
+        // 3. CORREÇÃO CRÍTICA: O Header deve ser "apikey" (em minúsculas)
+        request.addValue(RatesApi.apikey, forHTTPHeaderField: "apikey") // Minúsculas!
+        
+        return request
     }
 }

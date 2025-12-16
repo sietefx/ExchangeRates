@@ -17,6 +17,7 @@ extension RateFluctuationDetailView {
             case start
             case loading
             case success
+            case failure(Error?)
         }
         
         @Published var ratesFluctuation = [RateFluctuationModel]()
@@ -33,7 +34,8 @@ extension RateFluctuationDetailView {
         private var cancelables = Set<AnyCancellable>()
         
         var title: String {
-            return "\(baseCurrency ?? "") a \(symbol)"
+            guard let baseCurrency = baseCurrency, let fromCurrency = fromCurrency else { return "" }
+            return "\(baseCurrency) a \(fromCurrency)"
         }
         
         var symbol: String {
@@ -89,20 +91,59 @@ extension RateFluctuationDetailView {
             }
         }
         
+        // CORRIJA no ViewModel:
         var yAxisMin: Double {
-            let min = ratesHistorical.map(\.endRate).min() ?? 0
-            return (min - (min * 0.02))
+            // Garantir que nunca retorne NaN ou valores inválidos
+            guard !ratesHistorical.isEmpty else { return 0.0 }
+            
+            let minRate = ratesHistorical.compactMap { $0.endRate }.min() ?? 0.0
+            // Verificar se é um número válido
+            guard !minRate.isNaN && !minRate.isInfinite else { return 0.0 }
+            
+            return max(0.0, minRate)
         }
+
         var yAxisMax: Double {
-            let max = ratesHistorical.map(\.endRate).max() ?? 0
-            return (max + (max * 0.02))
+            // Sempre garantir um valor válido
+            guard !ratesHistorical.isEmpty else { return 5000.0 }
+            
+            let maxRate = ratesHistorical.compactMap { $0.endRate }.max() ?? 0.0
+            // Verificar se é um número válido
+            guard !maxRate.isNaN && !maxRate.isInfinite else { return 5000.0 }
+            
+            // Garantir que max > min
+            let calculatedMax = max(5000.0, maxRate * 1.05)
+            return calculatedMax.isFinite ? calculatedMax : 5000.0
+        }
+
+        // ADICIONE esta validação extra:
+        var yAxisDomain: ClosedRange<Double> {
+            let min = yAxisMin
+            let max = yAxisMax
+            
+            // Garantir que min <= max
+            if min > max {
+                return 0.0...5000.0
+            }
+            
+            // Garantir que não seja um range inválido
+            if min.isNaN || max.isNaN || min.isInfinite || max.isInfinite {
+                return 0.0...5000.0
+            }
+            
+            return min...max
         }
         
-        init(fluctuationDataProvider: RatesFluctuationDataProvider = RatesFluctuationDataProvider(),
-            historicalDataProvider: RatesHistoricalDataProvider = RatesHistoricalDataProvider()) {
-            self.fluctuationDataProvider = fluctuationDataProvider
-            self.historicalDataProvider = historicalDataProvider
-        }
+        init(
+                fluctuationDataProvider: RatesFluctuationDataProvider? = nil,
+                historicalDataProvider: RatesHistoricalDataProvider? = nil
+            ) {
+                self.fluctuationDataProvider =
+                    fluctuationDataProvider ?? RatesFluctuationDataProvider()
+
+                self.historicalDataProvider =
+                    historicalDataProvider ?? RatesHistoricalDataProvider()
+            }
         
         func xAxisLabelFormatStyle(for date: Date) -> String {
             switch timeRange {
@@ -150,12 +191,15 @@ extension RateFluctuationDetailView {
                 let startDate = timeRange.date.toString()
                 let endDate = Date().toString()
                 fluctuationDataProvider?.fetchFluctuation(by: baseCurrency, from: [], startDate: startDate, endDate: endDate)
+                    .receive(on: DispatchQueue.main) // <<< CORREÇÃO AQUI
                     .sink(receiveCompletion: { completion in
                         switch completion {
                         case .finished:
                             self.currentState = .success
-                        case .failure(_):
-                            print("Falhou!") // TODO imprimir uma view no lugar das caixas
+                        case .failure(let error):
+                            print("❌ ERRO NA BUSCA: \(error)")
+                            print("❌ DESCRIÇÃO: \(error.localizedDescription)")
+                            self.currentState = .failure(error)
                         }
                     }, receiveValue: { rateFluctuation in
                         withAnimation {
@@ -165,18 +209,20 @@ extension RateFluctuationDetailView {
                     }).store(in: &cancelables)
             }
         }
-        
+                
         private func doFetchRatesHistorical() {
             if let baseCurrency, let currency = fromCurrency {
                 let startDate = timeRange.date.toString()
                 let endDate = Date().toString()
                 historicalDataProvider?.fetchTimeseries(by: baseCurrency, from: currency, startDate: startDate, endDate: endDate)
+                    .receive(on: DispatchQueue.main) // <<< CORREÇÃO AQUI
                     .sink(receiveCompletion: { completion in
                         switch completion {
                         case .finished:
                             self.currentState = .success
-                        case .failure(_):
-                            print("Falhou!") // TODO imprimir uma view no lugar das caixas
+                        case .failure(let error):
+                            print("Falhou!")
+                            self.currentState = .failure(error)
                         }
                     }, receiveValue: { ratesHistorical in
                         withAnimation {
@@ -187,3 +233,4 @@ extension RateFluctuationDetailView {
         }
     }
 }
+

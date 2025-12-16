@@ -26,8 +26,8 @@ extension BaseCurrencyFilterView {
         private let dataProvider: CurrencySymbolsDataProvider?
         private var cancellables = Set<AnyCancellable>()
         
-        init(dataProvider: CurrencySymbolsDataProvider = CurrencySymbolsDataProvider()) {
-                self.dataProvider = dataProvider
+        init(dataProvider: CurrencySymbolsDataProvider? = nil) {
+            self.dataProvider = dataProvider ?? CurrencySymbolsDataProvider()
         }
         
         func doFetchCurrencySymbols() {

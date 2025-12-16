@@ -23,7 +23,8 @@ struct RateFluctuationDetailView: View {
             graphicChartView
             comparationView
         }
-        .padding(.horizontal, 8)
+        .padding(.leading, 8)
+        .padding(.trailing, 8)
         .navigationTitle(viewModel.title)
         .onAppear {
             viewModel.startStateView(
@@ -37,15 +38,15 @@ struct RateFluctuationDetailView: View {
     private var valuesView: some View {
         HStack(spacing: 8) {
             Text(viewModel.endRate.formatter(decimalPlaces: 4))
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
 
             Text(viewModel.changePct.toPercentage(with: true))
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(viewModel.changePct.color)
                 .background(viewModel.changePct.color.opacity(0.2))
 
             Text(viewModel.changeDescription)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(viewModel.change.color)
 
             Spacer()
@@ -77,7 +78,7 @@ struct RateFluctuationDetailView: View {
             } label: {
                 Text("1 mês")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(viewModel.timeRange == .today ? .blue : .gray)
+                    .foregroundColor(viewModel.timeRange == .thisMonth ? .blue : .gray)
                     .underline(viewModel.timeRange == .thisMonth)
             }
             Button {
@@ -99,52 +100,59 @@ struct RateFluctuationDetailView: View {
         }
     }
 
-//    private func periodButton(_ title: String, _ range: TimeRangeEnum) -> some View {
-//        Button {
-//            viewModel.doFetchData(from: range)
-//        } label: {
-//            Text(title)
-//                .font(.system(size: 14, weight: .bold))
-//                .foregroundColor(viewModel.timeRange == range ? .blue : .gray)
-//                .underline(viewModel.timeRange == range)
-//        }
-//    }
-
     private var lineChartView: some View {
         Chart(viewModel.ratesHistorical) { item in
             LineMark(
                 x: .value("Period", item.period),
                 y: .value("Rate", item.endRate)
             )
-            .interpolationMethod(.catmullRom)
+            .interpolationMethod(.monotone)
+            .foregroundStyle(.blue)
+            .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
             
-            if !viewModel.hasRates {
-                RuleMark(
-                    y: .value("Conversão Zero", 0)
-                )
-                .annotation(position: .overlay, alignment: .center) {
-                    Text("Sem valores para exibir a curva.")
-                        .font(.footnote)
-                        .padding()
-                        .background(Color(UIColor.systemBackground))
+            // Linha de referência horizontal em 5.000 (mantida)
+            RuleMark(y: .value("Limite", 5000))
+                .foregroundStyle(.gray.opacity(0.3))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [5]))
+        }
+        .chartYScale(domain: viewModel.yAxisMin...viewModel.yAxisMax)
+        
+        // EIXO Y SIMPLIFICADO - menos grades e números
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .stride(by: 2000)) { value in  // ← Reduzido de 1000 para 2000
+                AxisGridLine()
+                    .foregroundStyle(.gray.opacity(0.1))  // Grades mais sutis
+                AxisValueLabel {
+                    if let rate = value.as(Double.self) {
+                        Text("\(Int(rate))")
+                            .font(.system(size: 9, weight: .regular))  // Fonte menor
+                            .foregroundColor(.gray)
+                    }
                 }
             }
         }
+        
+        // EIXO X MANTIDO (mas simplificado)
         .chartXAxis {
-            AxisMarks(preset: .aligned, values: .stride(by: viewModel.xAxisStride, count: viewModel.xAxisStrideCount)) { date in
-                AxisGridLine()
-                AxisValueLabel(viewModel.xAxisLabelFormatStyle(for: date.as(Date.self) ?? Date()))
+            AxisMarks(values: .stride(by: .day, count: 7)) { value in  // ← Apenas uma marca por semana
+                if let date = value.as(Date.self) {
+                    AxisValueLabel {
+                        Text(viewModel.xAxisLabelFormatStyle(for: date))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                    AxisGridLine()
+                        .foregroundStyle(.gray.opacity(0.1))  // Grade mais sutil
+                }
             }
         }
-        .chartYAxis {
-            AxisMarks(position: .leading) { rate in
-                AxisGridLine()
-                AxisValueLabel(rate.as(Double.self)?.formatter(decimalPlaces: 3) ?? 0.0 .formatter(decimalPlaces: 3))
-            }
-        }
-        .chartYScale(domain: viewModel.yAxisMin...viewModel.yAxisMax)
-        .frame(height: 260)
-        .padding(.trailing, 20)
+        .frame(height: 280)
+        .padding(.horizontal)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        )
     }
 
     // MARK: - Comparação
@@ -174,20 +182,32 @@ struct RateFluctuationDetailView: View {
 
     private var comparationScrollView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHGrid(rows: [GridItem(.flexible())]) {
+            LazyHGrid(rows: [GridItem(.flexible())], alignment: .center) {
                 ForEach(viewModel.ratesFluctuation) { fluctuation in
                     Button {
                         viewModel.doComparation(with: fluctuation)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(fluctuation.symbol) / \(baseCurrency)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.black)
                             Text(fluctuation.endRate.formatter(decimalPlaces: 4))
-                                .fontWeight(.semibold)
+                                .font(.system(size: 14))
+                                .foregroundColor(.black)
+                            HStack(alignment: .bottom, spacing: 60) {
+                                Text(fluctuation.symbol)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.gray)
+                                Text(fluctuation.changePct.toPercentage())
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(fluctuation.changePct.color)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                            }
                         }
-                        .padding()
+                        .padding(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(.gray)
+                                .stroke(.gray, lineWidth: 1)
                         )
                     }
                 }

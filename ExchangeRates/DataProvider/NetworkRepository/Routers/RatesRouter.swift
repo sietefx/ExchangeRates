@@ -19,8 +19,10 @@ enum RatesRouter {
     }
     
     func asURLRequest() -> URLRequest? {
+        // 1. Inicia com a URL base.
         guard var url = URL(string: RatesApi.baseUrl) else { return nil }
         
+        // 2. Adiciona os Query Parameters (start_date, end_date, base, symbols)
         switch self {
         case .fluctuation(let base, let symbols, let startDate, let endDate):
             url.append(queryItems: [
@@ -37,9 +39,17 @@ enum RatesRouter {
                 URLQueryItem(name: "end_date", value: endDate)
             ])
         }
-    var request = URLRequest(url: url.appendingPathComponent(path), timeoutInterval: Double.infinity)
-    request.httpMethod = HttpMethod.get.rawValue
-    request.addValue(RatesApi.apiKey, forHTTPHeaderField: "apiKey")
-    return request
+        
+        // 3. Monta a URL final (Base + Path + Query Items)
+        let finalURL = url.appendingPathComponent(path)
+        
+        // 4. Cria a Request
+        var request = URLRequest(url: finalURL, timeoutInterval: Double.infinity)
+        request.httpMethod = HttpMethod.get.rawValue
+        
+        // 5. CORREÇÃO CRÍTICA: O Header deve ser "apikey" (em minúsculas)
+        request.addValue(RatesApi.apikey, forHTTPHeaderField: "apikey")
+        
+        return request
     }
 }
